@@ -18,10 +18,8 @@ class Browser:
 
     driver: WebDriver
 
-    def __init__(self, headless: bool = True):
+    def __init__(self):
         opts = Options()
-        if headless:
-            opts.add_argument("--headless")
         opts.binary_location = CHROME_BIN_PATH
         chrome_driver = CHROMEDRIVER_PATH
         self.driver = webdriver.Chrome(options=opts, executable_path=chrome_driver)

@@ -96,7 +96,7 @@ def nasa_iotd_get_feed() -> str:
 
     entries = []
 
-    browser = Browser(headless=True)
+    browser = Browser()
 
     for entry in nasa_feed["entries"]:
         try:
