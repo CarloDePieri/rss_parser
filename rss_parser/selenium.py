@@ -42,6 +42,11 @@ def setup_selenium():
         selenium_error(msg)
         raise Exception(msg)
 
+    if os.geteuid() == 0:
+        msg = f"FATAL ERROR: CHROME CAN'T BE LAUNCHED SAFELY BY ROOT. LAUNCH THE PROGRAM AS A NORMAL USER!"
+        selenium_error(msg)
+        raise Exception(msg)
+
     chrome_version = (
         subprocess.run([CHROME_BIN_PATH, "--version"], capture_output=True)
         .stdout.decode("utf-8")
@@ -73,7 +78,7 @@ def _download_chromedriver(version: str) -> None:
     latest_chromedriver_version = _get_latest_chromedriver_version(version)
 
     selenium_log(f"Chrome version: {version}")
-    selenium_log(f"Chromedriver version: {latest_chromedriver_version}")
+    selenium_log(f"Latest Chromedriver version: {latest_chromedriver_version}")
     selenium_log(f"Downloading...")
 
     # Delete old chromedriver
