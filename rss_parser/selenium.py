@@ -57,7 +57,7 @@ def setup_selenium():
             .replace("\n", "")
         )
         chromedriver_version = re.sub(r" \((.*)\)", "", chromedriver_version)
-        if _get_latest_version_number(chrome_version) != chromedriver_version:
+        if _get_latest_chromedriver_version(chrome_version) != chromedriver_version:
             selenium_log(f"Wrong Chromedriver version.")
             _download_chromedriver(chrome_version)
     else:
@@ -68,13 +68,13 @@ def setup_selenium():
 
 
 def _download_chromedriver(version: str) -> None:
-    selenium_log(f"Chrome version: {version}")
-
-    selenium_log(f"Chromedriver version: {_get_latest_version_number(version)}")
-    selenium_log(f"Downloading...")
-
     chromedriver_dir = Path(CHROMEDRIVER_PATH).parent.absolute()
     chromedriver_archive = f"{CHROMEDRIVER_PATH}_linux64.zip"
+    latest_chromedriver_version = _get_latest_chromedriver_version(version)
+
+    selenium_log(f"Chrome version: {version}")
+    selenium_log(f"Chromedriver version: {latest_chromedriver_version}")
+    selenium_log(f"Downloading...")
 
     # Delete old chromedriver
     if os.path.exists(CHROMEDRIVER_PATH):
@@ -85,7 +85,7 @@ def _download_chromedriver(version: str) -> None:
         os.remove(chromedriver_archive)
 
     # Download a new chromedriver archive
-    chromedriver_url = f"https://chromedriver.storage.googleapis.com/{latest_release}/chromedriver_linux64.zip"
+    chromedriver_url = f"https://chromedriver.storage.googleapis.com/{latest_chromedriver_version}/chromedriver_linux64.zip"
     subprocess.run(
         ["wget", chromedriver_url, "--directory-prefix", chromedriver_dir],
         capture_output=True,
@@ -94,7 +94,7 @@ def _download_chromedriver(version: str) -> None:
     subprocess.run(["unzip", chromedriver_archive], capture_output=True)
 
 
-def _get_latest_version_number(version: str) -> str:
+def _get_latest_chromedriver_version(version: str) -> str:
     version_family = ".".join(version.split(".")[:-1])
     latest_release_url = (
         f"https://chromedriver.storage.googleapis.com/LATEST_RELEASE_{version_family}"
