@@ -144,40 +144,43 @@ class IlPostParser(Parser):
             body = article.find("span", id="singleBody")
 
         if body:
-            for children in body.children:
+            for child in body.children:
                 # text paragraph
-                if children.name == "p":
-                    description += str(children)
+                if child.name == "p":
+                    description += str(child)
                 # simple image
-                if children.name == "img":
-                    description += cls._new_image_with_caption(children.attrs["src"])
+                if child.name == "img":
+                    description += cls._new_image_with_caption(child.attrs["src"])
                 # attachments
-                if children.name == "div" and "attachment" in children.attrs.get(
-                    "id", ""
-                ):
+                if child.name == "div" and "attachment" in child.attrs.get("id", ""):
                     # images
-                    img = children.find("img")
+                    img = child.find("img")
                     if img:
                         description += cls._new_image_with_caption(
-                            img.attrs["data-src"], children.text
+                            img.attrs["data-src"], child.text
                         )
                 # blockquote
-                if children.name == "blockquote":
-                    description += str(children)
+                if child.name == "blockquote":
+                    description += str(child)
                 # video player
-                if children.name == "div" and "video-container" in children.attrs.get(
+                if child.name == "div" and "video-container" in child.attrs.get(
                     "class", []
                 ):
-                    yt = children.find("div", class_="rll-youtube-player")
+                    yt = child.find("div", class_="rll-youtube-player")
                     if yt:
                         src = yt.attrs["data-src"]
                         description += cls._new_video_placeholder(src)
+                # image gallery
+                if child.name == "div" and "gallery" in child.attrs.get("class", []):
+                    for inner_child in child.children:
+                        url = inner_child.find("a").attrs["href"]
+                        src = inner_child.find("img").attrs["data-src"]
+                        description += cls._new_gallery_image(url, src)
                 # live feed
-                if (
-                    children.name == "div"
-                    and "live-center-embed" in children.attrs.get("class", [])
+                if child.name == "div" and "live-center-embed" in child.attrs.get(
+                    "class", []
                 ):
-                    description += str(children)
+                    description += str(child)
 
         # DEBUG - APPEND THE WHOLE UNPROCESSED ARTICLE
         # description += f"<hr>{str(article)}"
@@ -201,4 +204,14 @@ class IlPostParser(Parser):
             f'<figure><picture><a href="{url}" target="_blank">'
             f'<img src="https://i.ytimg.com/vi/{id_}/hqdefault.jpg" alt="youtube"></a></picture>'
             f"<figcaption>(YouTube video - Click the placeholder to open it)</figcaption></figure>"
+        )
+
+    @staticmethod
+    def _new_gallery_image(url: str, src: str) -> str:
+        # fix all webp images
+        url = url.replace("jpeg.webp", "jpeg").replace("jpg.webp", "jpg")
+        return (
+            f'<figure><picture><a href="{url}" target="_blank">'
+            f'<img src="{src}" alt="youtube"></a></picture>'
+            f"</figure>"
         )
