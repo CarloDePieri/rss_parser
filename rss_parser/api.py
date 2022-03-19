@@ -4,6 +4,7 @@ from fastapi import BackgroundTasks, FastAPI, Response, HTTPException
 from fastapi.responses import HTMLResponse
 
 from rss_parser.logger import cache_log, parser_log
+from rss_parser.parser.ilpost import IlPostParser
 from rss_parser.parser.nasa_iotd import NasaIOTDParser
 from rss_parser.selenium import setup_selenium, Browser
 
@@ -13,7 +14,7 @@ app = FastAPI()
 setup_selenium()
 
 # Register parsers
-active_parsers = [NasaIOTDParser]
+active_parsers = [NasaIOTDParser, IlPostParser]
 parser_log(f"activated: {', '.join(map(lambda x: x.name, active_parsers))}")
 
 # Init the cache
