@@ -7,64 +7,13 @@ import feedparser
 from feedparser.util import FeedParserDict
 from dateutil import parser, tz
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 from rss_parser.cache import Cache
 from rss_parser.logger import cache_log, log
 from rss_parser.parser import Parser
 from rss_parser.selenium import Browser
 from rss_parser.utils import wait_for
-
-
-def parse_entry(entry: FeedParserDict, browser: Browser) -> Item:
-    link = entry["link"]
-    title = entry["title"]
-
-    item = NasaIOTDCache.recover_from_cache(link)
-
-    if not item:
-        #
-        # No cached entry, we need to parse it
-        #
-        browser.open(link)
-
-        article = wait_for(
-            lambda: BeautifulSoup(browser.get_page_source(), "html.parser").find(
-                "div", class_="article-body"
-            )
-        )
-
-        image_node = article.find("div", class_="feature-image-container")
-        text_node = article.find("div", class_="text")
-        author_node = text_node.find("div", class_="editor")
-
-        image = str(image_node).replace(
-            'href="/sites', 'href="https://www.nasa.gov/sites'
-        )
-        text = str(text_node)
-        description = image + "<br>" + text
-        author = str(author_node.text).replace("Editor: ", "")
-
-        tz_dict = {
-            "EST": tz.gettz("America/New_York"),
-            "EDT": tz.gettz("America/New_York"),
-        }
-        published = parser.parse(entry["published"], tzinfos=tz_dict)
-
-        # Save the parsed data to the cache
-        NasaIOTDCache.save_to_cache(link, title, published, author, description)
-    else:
-        published = parser.parse(item["published"])
-        author = item["author"]
-        description = item["description"]
-
-    return Item(
-        title=title,
-        link=link,
-        description=description,
-        author=author,
-        guid=Guid(link),
-        pubDate=published,
-    )
 
 
 class NasaIOTDCache(Cache):
@@ -116,10 +65,11 @@ class NasaIOTDCache(Cache):
 class NasaIOTDParser(Parser):
 
     name: str = "nasa_iotd"
+    default_limit: int = 60
     cache: Cache = NasaIOTDCache
 
-    @staticmethod
-    def get_xml_feed() -> str:
+    @classmethod
+    def get_xml_feed(cls, limit: int = -1) -> str:
         nasa_feed = feedparser.parse(
             "https://www.nasa.gov/rss/dyn/lg_image_of_the_day.rss"
         )
@@ -128,9 +78,13 @@ class NasaIOTDParser(Parser):
 
         browser = Browser()
 
-        for entry in nasa_feed["entries"]:
+        if limit == -1:
+            # Use the default_limit
+            limit = cls.default_limit
+
+        for entry in nasa_feed["entries"][:limit]:
             try:
-                entries.append(parse_entry(entry, browser))
+                entries.append(cls.parse_entry(entry, browser))
             except TimeoutError:
                 log.error(f"SKIPPED: {entry['link']} - Timed out when parsing")
             except Exception:
@@ -148,3 +102,68 @@ class NasaIOTDParser(Parser):
         )
 
         return feed.rss()
+
+    @classmethod
+    def parse_source(cls, url: str, browser: Browser) -> str:
+        article = cls._get_article_node(url, browser)
+        return cls._create_description(article)
+
+    @classmethod
+    def parse_entry(cls, entry: FeedParserDict, browser: Browser) -> Item:
+        link = entry["link"]
+        title = entry["title"]
+
+        item = cls.cache.recover_from_cache(link)
+
+        if not item:
+            #
+            # No cached entry, we need to parse it
+            #
+            article = cls._get_article_node(link, browser)
+
+            description = cls._create_description(article)
+            author_node = article.find("div", class_="editor")
+            author = str(author_node.text).replace("Editor: ", "")
+
+            tz_dict = {
+                "EST": tz.gettz("America/New_York"),
+                "EDT": tz.gettz("America/New_York"),
+            }
+            published = parser.parse(entry["published"], tzinfos=tz_dict)
+
+            # Save the parsed data to the cache
+            cls.cache.save_to_cache(link, title, published, author, description)
+        else:
+            published = parser.parse(item["published"])
+            author = item["author"]
+            description = item["description"]
+
+        return Item(
+            title=title,
+            link=link,
+            description=description,
+            author=author,
+            guid=Guid(link),
+            pubDate=published,
+        )
+
+    @classmethod
+    def _get_article_node(cls, url: str, browser: Browser) -> Tag:
+        browser.open(url)
+        return wait_for(
+            lambda: BeautifulSoup(browser.get_page_source(), "html.parser").find(
+                "div", class_="article-body"
+            )
+        )
+
+    @staticmethod
+    def _create_description(article: Tag) -> str:
+        image_node = article.find("div", class_="feature-image-container")
+        text_node = article.find("div", class_="text")
+        image = (
+            str(image_node)
+            .replace('href="/sites', 'href="https://www.nasa.gov/sites')
+            .replace('src="/sites', 'src="https://www.nasa.gov/sites')
+        )
+        text = str(text_node)
+        return image + "<br>" + text
