@@ -168,7 +168,10 @@ class IlPostParser(Parser):
                 if children.name == "div" and "video-container" in children.attrs.get(
                     "class", []
                 ):
-                    description += str(children.find("noscript").contents[0])
+                    yt = children.find("div", class_="rll-youtube-player")
+                    if yt:
+                        src = yt.attrs["data-src"]
+                        description += cls._new_video_placeholder(src)
                 # live feed
                 if (
                     children.name == "div"
@@ -189,3 +192,13 @@ class IlPostParser(Parser):
         if caption:
             caption_code = f"<figcaption>{caption}</figcaption>"
         return f"<figure><picture><img src='{url}'/></picture>{caption_code}</figure>"
+
+    @staticmethod
+    def _new_video_placeholder(url: str) -> str:
+        id_ = url.split("/")[-1]
+        url = f"https://www.youtube.com/watch?v={id_}"
+        return (
+            f'<figure><picture><a href="{url}" target="_blank">'
+            f'<img src="https://i.ytimg.com/vi/{id_}/hqdefault.jpg" alt="youtube"></a></picture>'
+            f"<figcaption>(YouTube video - Click the placeholder to open it)</figcaption></figure>"
+        )
