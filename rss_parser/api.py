@@ -27,7 +27,7 @@ def parse(feed_id: str, background_tasks: BackgroundTasks) -> Response:
     for active_parser in active_parsers:
         if feed_id == active_parser.name:
             # background tasks will be executed after returning the response
-            background_tasks.add_task(active_parser.prune_cache)
+            background_tasks.add_task(active_parser.cache.prune)
             # return the parsed feed
             return Response(
                 content=active_parser.get_xml_feed(), media_type="application/xml"

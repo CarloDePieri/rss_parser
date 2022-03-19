@@ -9,7 +9,17 @@ class Cache(ABC):
 
     @staticmethod
     @abstractmethod
-    def init():
+    def init() -> None:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def recover_from_cache(cls, id_: str) -> Optional[Dict[str, str]]:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def prune(max_entries: int) -> None:
         pass
 
     @staticmethod

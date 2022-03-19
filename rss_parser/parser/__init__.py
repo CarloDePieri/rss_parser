@@ -18,8 +18,3 @@ class Parser(ABC):
     @abstractmethod
     def get_xml_feed() -> str:
         pass
-
-    @staticmethod
-    @abstractmethod
-    def prune_cache():
-        pass
