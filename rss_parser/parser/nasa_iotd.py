@@ -43,7 +43,7 @@ class NasaIOTDCache(Cache):
         return cls._recover_from_cache(id_, "nasa_iotd")
 
 
-def parse_entry(entry: FeedParserDict, browser: Browser) -> str:
+def parse_entry(entry: FeedParserDict, browser: Browser) -> Item:
     link = entry["link"]
     title = entry["title"]
 
@@ -70,7 +70,7 @@ def parse_entry(entry: FeedParserDict, browser: Browser) -> str:
             'href="/sites', 'href="https://www.nasa.gov/sites'
         )
         text = str(text_node)
-        description = image + text
+        description = image + "<br>" + text
         author = str(author_node.text).replace("Editor: ", "")
 
         tz_dict = {
