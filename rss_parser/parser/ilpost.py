@@ -59,6 +59,10 @@ class IlPostCache(Cache):
             connection.commit()
             cache_log(f"ilpost: pruned {to_prune} old entries.")
 
+    @classmethod
+    def drop(cls):
+        cls._drop_table("ilpost")
+
 
 class IlPostParser(Parser):
 

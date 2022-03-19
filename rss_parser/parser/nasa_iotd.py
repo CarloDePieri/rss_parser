@@ -61,6 +61,10 @@ class NasaIOTDCache(Cache):
             connection.commit()
             cache_log(f"nasa_iotd: pruned {to_prune} old entries.")
 
+    @classmethod
+    def drop(cls):
+        cls._drop_table("nasa_iotd")
+
 
 class NasaIOTDParser(Parser):
 

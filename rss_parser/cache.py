@@ -22,6 +22,11 @@ class Cache(ABC):
     def prune(max_entries: int) -> None:
         pass
 
+    @classmethod
+    @abstractmethod
+    def drop(cls) -> None:
+        pass
+
     @staticmethod
     def _save_to_cache(table: str, data: Tuple) -> None:
         connection = sqlite3.connect(Cache.DB)
@@ -45,3 +50,10 @@ class Cache(ABC):
         if element:
             return dict(element)
         return element
+
+    @classmethod
+    def _drop_table(cls, table: str) -> None:
+        connection = sqlite3.connect(cls.DB)
+        connection.execute("DROP TABLE '%s'" % table)
+        connection.commit()
+        connection.close()

@@ -81,3 +81,12 @@ def preview(feed_id: str, id_: str):
 
     # If we got here we there were no match with the activated parsed
     raise HTTPException(status_code=404, detail="Feed not found")
+
+
+@app.get("/drop/{feed_id}/")
+def drop_cache(feed_id: str):
+    for active_parser in active_parsers:
+        if feed_id == active_parser.name:
+            active_parser.cache.drop()
+            return {f"{feed_id}": "cache dropped"}
+    raise HTTPException(status_code=404, detail="Feed not found")
