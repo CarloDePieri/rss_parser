@@ -4,3 +4,4 @@
 /chromedriver_linux64.zip
 /feeds_cache.db
 **/__pycache__
+/deploy
