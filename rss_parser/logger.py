@@ -3,6 +3,10 @@ import logging
 log = logging.getLogger("uvicorn.error")
 
 
+def parser_log(msg: str) -> None:
+    log.info(f"[PARSER] {msg}")
+
+
 def cache_log(msg: str) -> None:
     log.info(f"[CACHE] {msg}")
 
