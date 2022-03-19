@@ -202,7 +202,7 @@ class IlPostParser(Parser):
         url = f"https://www.youtube.com/watch?v={id_}"
         return (
             f'<figure><picture><a href="{url}" target="_blank">'
-            f'<img src="https://i.ytimg.com/vi/{id_}/hqdefault.jpg" alt="youtube"></a></picture>'
+            f'<img src="https://i.ytimg.com/vi/{id_}/hqdefault.jpg"></a></picture>'
             f"<figcaption>(YouTube video - Click the placeholder to open it)</figcaption></figure>"
         )
 
@@ -212,6 +212,6 @@ class IlPostParser(Parser):
         url = url.replace("jpeg.webp", "jpeg").replace("jpg.webp", "jpg")
         return (
             f'<figure><picture><a href="{url}" target="_blank">'
-            f'<img src="{src}" alt="youtube"></a></picture>'
+            f'<img src="{src}"></a></picture>'
             f"</figure>"
         )
