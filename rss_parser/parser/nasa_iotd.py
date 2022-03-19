@@ -133,7 +133,18 @@ class NasaIOTDParser(Parser):
         return feed.rss()
 
     @staticmethod
-    def prune_cache():
-        """Keeps in cache only the most recent 70 entries."""
-        cache_log("nasa_iotd: pruning...")
-        cache_log("nasa_iotd: pruned.")
+    def prune_cache(max_entries: int = 60):
+        """Keeps in cache only the most recent 60 entries."""
+        connection = sqlite3.connect(Cache.DB)
+        count = connection.execute("""SELECT count(id) FROM nasa_iotd""").fetchone()[0]
+        to_prune = count - max_entries
+        if to_prune > 0:
+            connection.execute(
+                """
+            DELETE FROM nasa_iotd WHERE nasa_iotd.id in
+            (SELECT id FROM nasa_iotd ORDER BY published ASC limit '%s')
+            """
+                % to_prune
+            )
+            connection.commit()
+            cache_log(f"nasa_iotd: pruned {to_prune} old entries.")
