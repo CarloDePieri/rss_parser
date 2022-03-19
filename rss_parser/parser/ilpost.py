@@ -150,9 +150,7 @@ class IlPostParser(Parser):
                     description += str(children)
                 # simple image
                 if children.name == "img":
-                    description += cls._new_image_with_caption(
-                        children.attrs["src"], ""
-                    )
+                    description += cls._new_image_with_caption(children.attrs["src"])
                 # attachments
                 if children.name == "div" and "attachment" in children.attrs.get(
                     "id", ""
@@ -184,10 +182,10 @@ class IlPostParser(Parser):
         return description
 
     @staticmethod
-    def _new_image_with_caption(url: str, caption: str) -> str:
+    def _new_image_with_caption(url: str, caption: str = None) -> str:
         # fix all webp images
         url = url.replace("jpeg.webp", "jpeg").replace("jpg.webp", "jpg")
-        return (
-            f"<div style='margin:8pt'><img src='{url}' />"
-            f"<div style='margin-top: 5pt'><small><i>{caption}</i></small></div></div>"
-        )
+        caption_code = ""
+        if caption:
+            caption_code = f"<figcaption>{caption}</figcaption>"
+        return f"<figure><picture><img src='{url}'/></picture>{caption_code}</figure>"
