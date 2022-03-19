@@ -65,43 +65,9 @@ class NasaIOTDCache(Cache):
 class NasaIOTDParser(Parser):
 
     name: str = "nasa_iotd"
+    url: str = "https://www.nasa.gov/rss/dyn/lg_image_of_the_day.rss"
     default_limit: int = 60
     cache: Cache = NasaIOTDCache
-
-    @classmethod
-    def get_xml_feed(cls, limit: int = -1) -> str:
-        nasa_feed = feedparser.parse(
-            "https://www.nasa.gov/rss/dyn/lg_image_of_the_day.rss"
-        )
-
-        entries = []
-
-        browser = Browser()
-
-        if limit == -1:
-            # Use the default_limit
-            limit = cls.default_limit
-
-        for entry in nasa_feed["entries"][:limit]:
-            try:
-                entries.append(cls.parse_entry(entry, browser))
-            except TimeoutError:
-                log.error(f"SKIPPED: {entry['link']} - Timed out when parsing")
-            except Exception:
-                log.error(f"SKIPPED: {entry['link']} - Unknown error")
-
-        browser.quit()
-
-        feed = Feed(
-            title=nasa_feed["feed"]["title"],
-            link=nasa_feed["feed"]["link"],
-            description=nasa_feed["feed"]["subtitle"],
-            language=nasa_feed["feed"]["language"],
-            lastBuildDate=datetime.datetime.now(),
-            items=entries,
-        )
-
-        return feed.rss()
 
     @classmethod
     def parse_source(cls, url: str, browser: Browser) -> str:
