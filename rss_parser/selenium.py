@@ -20,6 +20,8 @@ class Browser:
 
     def __init__(self):
         opts = Options()
+        if os.environ.get("SELENIUM_HEADLESS") == "1":
+            opts.add_argument("--headless")
         opts.binary_location = CHROME_BIN_PATH
         chrome_driver = CHROMEDRIVER_PATH
         self.driver = webdriver.Chrome(options=opts, executable_path=chrome_driver)
