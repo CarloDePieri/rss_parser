@@ -24,7 +24,7 @@ class Cache(ABC):
 
     @classmethod
     @abstractmethod
-    def drop(cls) -> None:
+    def flush_cache(cls) -> None:
         pass
 
     @staticmethod
@@ -52,8 +52,8 @@ class Cache(ABC):
         return element
 
     @classmethod
-    def _drop_table(cls, table: str) -> None:
+    def _truncate_table(cls, table: str) -> None:
         connection = sqlite3.connect(cls.DB)
-        connection.execute("DROP TABLE '%s'" % table)
+        connection.execute("DELETE FROM '%s'" % table)
         connection.commit()
         connection.close()

@@ -1,4 +1,5 @@
 import sqlite3
+from sqlite3 import OperationalError
 from typing import Optional, Dict
 
 from rfeed import Item, Guid
@@ -60,8 +61,8 @@ class IlPostCache(Cache):
             cache_log(f"ilpost: pruned {to_prune} old entries.")
 
     @classmethod
-    def drop(cls):
-        cls._drop_table("ilpost")
+    def flush_cache(cls):
+        cls._truncate_table("ilpost")
 
 
 class IlPostParser(Parser):
