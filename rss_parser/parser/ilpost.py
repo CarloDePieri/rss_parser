@@ -181,7 +181,7 @@ class IlPostParser(Parser):
                 if child.name == "div" and "live-center-embed" in child.attrs.get(
                     "class", []
                 ):
-                    description += f"<a href='{child.attrs['data-src']}'>[[ LIVE BLOG - OPEN THE SOURCE TO FOLLOW IT ]]</a>"
+                    description += f"<p><a href='{child.attrs['data-src']}'>[[ LIVE BLOG - Click to open a tidy version ]]</a></p>"
 
         # DEBUG - APPEND THE WHOLE UNPROCESSED ARTICLE
         # description += f"<hr>{str(article)}"
