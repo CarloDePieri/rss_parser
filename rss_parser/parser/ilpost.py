@@ -188,6 +188,12 @@ class IlPostParser(Parser):
                     "class", []
                 ):
                     description += f"<p><a href='{child.attrs['data-src']}'>[[ LIVE BLOG - Click to open a tidy version ]]</a></p>"
+                # data (maps)
+
+                if child.name == "div" and "ilpost_datawrapper" in child.attrs.get(
+                    "class", []
+                ):
+                    description += cls._new_data_wrapper(child)
 
         # DEBUG - APPEND THE WHOLE UNPROCESSED ARTICLE
         # description += f"<hr>{str(article)}"
@@ -222,3 +228,11 @@ class IlPostParser(Parser):
             f'<img src="{src}"></a></picture>'
             f"</figure>"
         )
+
+    @staticmethod
+    def _new_data_wrapper(wrapper: Tag) -> str:
+        try:
+            url = wrapper.attrs["data-url"]
+            return f"<p><iframe src='{url}'></iframe></p><p>[[ DATA VISUALIZATION - Open the full page if you can't see it ]]</p>"
+        except Exception as e:
+            return "[[ BROKEN DATA VISUALIZATION - Open the full page to see it ]]"
