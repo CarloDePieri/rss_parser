@@ -1,5 +1,4 @@
 import sqlite3
-from sqlite3 import OperationalError
 from typing import Optional, Dict
 
 from rfeed import Item, Guid
@@ -11,6 +10,7 @@ from bs4.element import Tag
 from rss_parser.cache import Cache
 from rss_parser.logger import cache_log
 from rss_parser.parser import Parser
+from rss_parser.helpers import parse_telegram_iframe
 from rss_parser.selenium import Browser
 from rss_parser.utils import wait_for
 
@@ -75,7 +75,7 @@ class IlPostParser(Parser):
     @classmethod
     def parse_source(cls, url: str, browser: Browser) -> str:
         article = cls._get_article_node(url, browser)
-        return cls._create_description(article)
+        return cls._create_description(article, browser)
 
     @classmethod
     def parse_entry(cls, entry: FeedParserDict, browser: Browser) -> Item:
@@ -90,7 +90,7 @@ class IlPostParser(Parser):
             #
             article = cls._get_article_node(link, browser)
 
-            description = cls._create_description(article)
+            description = cls._create_description(article, browser)
 
             tz_dict = {
                 "EST": tz.gettz("America/New_York"),
@@ -122,7 +122,7 @@ class IlPostParser(Parser):
         )
 
     @classmethod
-    def _create_description(cls, article: Tag) -> str:
+    def _create_description(cls, article: Tag, browser: Browser) -> str:
         description = ""
 
         # Find out if a subtitle is present
@@ -148,7 +148,13 @@ class IlPostParser(Parser):
             for child in body.children:
                 # text paragraph
                 if child.name == "p":
-                    description += str(child)
+                    # look for a telegram iframe
+                    iframe = child.find("iframe")
+                    if iframe and "telegram-post" in iframe.attrs.get("id"):
+                        description += parse_telegram_iframe(iframe, browser)
+                    else:
+                        # normale text paragraph
+                        description += str(child)
                 # simple image
                 if child.name == "img":
                     description += cls._new_image_with_caption(child.attrs["src"])
