@@ -150,8 +150,11 @@ class IlPostParser(Parser):
                 if child.name == "p":
                     # look for a telegram iframe
                     iframe = child.find("iframe")
-                    if iframe and "telegram-post" in iframe.attrs.get("id"):
-                        description += parse_telegram_iframe(iframe, browser)
+                    if iframe:
+                        if "telegram-post" in iframe.attrs.get("id", ""):
+                            description += parse_telegram_iframe(iframe, browser)
+                        else:
+                            description += cls._new_generic_iframe(iframe)
                     else:
                         # normale text paragraph
                         description += str(child)
@@ -189,11 +192,15 @@ class IlPostParser(Parser):
                 ):
                     description += f"<p><a href='{child.attrs['data-src']}'>[[ LIVE BLOG - Click to open a tidy version ]]</a></p>"
                 # data (maps)
-
                 if child.name == "div" and "ilpost_datawrapper" in child.attrs.get(
                     "class", []
                 ):
                     description += cls._new_data_wrapper(child)
+                # data (graphs)
+                if child.name == "div" and "flourish-embed" in child.attrs.get(
+                    "class", []
+                ):
+                    description += "<p><figure><figcaption>[[ DATA GRAPH - Open the webpage to see it ]]</figcaption></figure></p>"
 
         # DEBUG - APPEND THE WHOLE UNPROCESSED ARTICLE
         # description += f"<hr>{str(article)}"
@@ -230,9 +237,32 @@ class IlPostParser(Parser):
         )
 
     @staticmethod
+    def _new_generic_iframe(wrapper: Tag) -> str:
+        try:
+            url = wrapper.attrs.get("src")
+            if not url or url[0:4] != "http":
+                url = wrapper.attrs.get("data-url")
+            if not url or url[0:4] != "http":
+                url = wrapper.attrs.get("data-lazy-src")
+            start_link = ""
+            end_link = ""
+            if url and url[0:4] == "http":
+                start_link = f"<a href='{url}'>"
+                end_link = "</a>"
+            return (
+                f"<figure><picture><iframe src='{url}'></iframe></picture>"
+                f"<figcaption>{start_link}[[ IFRAME - Click here to see it ]]{end_link}</figcaption></figure>"
+            )
+        except Exception as e:
+            return "<p><figure><figcaption>[[ BROKEN IFRAME - Open the webpage to see it ]]</figcaption></figure>"
+
+    @staticmethod
     def _new_data_wrapper(wrapper: Tag) -> str:
         try:
             url = wrapper.attrs["data-url"]
-            return f"<p><iframe src='{url}'></iframe></p><p>[[ DATA VISUALIZATION - Open the full page if you can't see it ]]</p>"
+            return (
+                f"<figure><picture><iframe src='{url}'></iframe></picture>"
+                f"<figcaption><a href='{url}'>[[ DATA VISUALIZATION - Open the full page if you can't see it ]]</a></figcaption></figure>"
+            )
         except Exception as e:
-            return "[[ BROKEN DATA VISUALIZATION - Open the full page to see it ]]"
+            return "<p><figure><figcaption>[[ BROKEN DATA VISUALIZATION - Open the full page to see it ]]</figcaption></figure>"
