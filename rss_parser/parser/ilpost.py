@@ -9,7 +9,7 @@ from bs4.element import Tag
 
 from rss_parser.cache import Cache
 from rss_parser.logger import cache_log
-from rss_parser.parser import Parser
+from rss_parser.parser import Parser, SkipEntryException
 from rss_parser.helpers import parse_telegram_iframe
 from rss_parser.selenium import Browser
 from rss_parser.utils import wait_for
@@ -79,6 +79,12 @@ class IlPostParser(Parser):
 
     @classmethod
     def parse_entry(cls, entry: FeedParserDict, browser: Browser) -> Item:
+
+        # Check if it should be skipped
+        for tag in entry["tags"]:
+            if tag["term"] == "Abbonati":
+                raise SkipEntryException
+
         link = entry["link"]
         title = entry["title"]
 

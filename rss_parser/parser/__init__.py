@@ -48,14 +48,21 @@ class Parser(ABC):
             # Use the default_limit
             limit = cls.default_limit
 
-        for entry in feed["entries"][:limit]:
+        # Iterate over feed["entries"], allowing skipping entries
+        read_entries = 0
+        while len(entries) < limit and read_entries < len(feed["entries"]):
+            entry = feed["entries"][read_entries]
+            read_entries += 1
             try:
+                log.debug(f"PARSING: {entry['link']} - {entry['title']}")
                 entries.append(cls.parse_entry(entry, browser))
+            except SkipEntryException:
+                pass
             except TimeoutError:
-                entries.append(cls._get_broken_item(entry["link"]))
+                entries.append(cls._get_broken_item(entry["link"], entry["title"]))
                 log.error(f"SKIPPED: {entry['link']} - Timed out when parsing")
             except Exception as e:
-                entries.append(cls._get_broken_item(entry["link"]))
+                entries.append(cls._get_broken_item(entry["link"], entry["title"]))
                 log.error(f"SKIPPED: {entry['link']} - Unknown error")
 
         browser.quit()
@@ -72,10 +79,14 @@ class Parser(ABC):
         return feed.rss()
 
     @staticmethod
-    def _get_broken_item(url: str) -> Item:
+    def _get_broken_item(url: str, title: str) -> Item:
         return Item(
             title="BROKEN",
             link=url,
-            description=f"Something went wrong when parsing <a href='{url}'>{url}</a>",
+            description=f"<h2>[BROKEN]{title}</h2><p>Something went wrong when parsing <a href='{url}'>{url}</a></p>",
             guid=Guid(url),
         )
+
+
+class SkipEntryException(Exception):
+    """Signal that this entry should be skipped."""
