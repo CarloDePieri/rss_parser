@@ -131,13 +131,20 @@ class IlPostParser(Parser):
             description += str(subtitle)
 
         # initial figure
-        figure = article.find("div", class_="figure-container cf")
-        if figure:
-            first_img = figure.find("img")
-            caption = figure.find("span", class_="caption")
-            description += cls._new_image_with_caption(
-                first_img.attrs["data-src"], caption.text
-            )
+        header = article.find("div", class_="entry-container")
+        if header:
+            for child in header.children:
+                if (
+                    child.name == "div"
+                    and "figure-container" in child.attrs["class"]
+                    and "cf" in child.attrs["class"]
+                ):
+                    first_img = child.find("img")
+                    if first_img:
+                        caption = child.find("span", class_="caption")
+                        description += cls._new_image_with_caption(
+                            first_img.attrs["data-src"], caption.text
+                        )
 
         # article body
         body = article.find("div", id="singleBody")
@@ -186,6 +193,7 @@ class IlPostParser(Parser):
                         url = inner_child.find("a").attrs["href"]
                         src = inner_child.find("img").attrs["data-src"]
                         description += cls._new_gallery_image(url, src)
+                        description += f"<figure><figcaption><a href='{url}' target='_blank'>[GALLERY]</a></figcaption></figure>"
                 # live feed
                 if child.name == "div" and "live-center-embed" in child.attrs.get(
                     "class", []
