@@ -199,7 +199,7 @@ class IlPostParser(Parser):
                         url = inner_child.find("a").attrs["href"]
                         src = inner_child.find("img").attrs["data-src"]
                         description += cls._new_gallery_image(url, src)
-                        description += f"<figure><figcaption><a href='{url}' target='_blank'>[GALLERY]</a></figcaption></figure>"
+                    description += f"<figure><figcaption><a href='{url}' target='_blank'>[GALLERY]</a></figcaption></figure>"
                 # live feed
                 if child.name == "div" and "live-center-embed" in child.attrs.get(
                     "class", []
