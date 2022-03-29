@@ -1,4 +1,5 @@
 import datetime
+from time import sleep
 
 import feedparser
 
@@ -37,6 +38,13 @@ class Parser(ABC):
         pass
 
     @classmethod
+    @abstractmethod
+    def parse_entry(
+        cls, entry: feedparser.util.FeedParserDict, browser: Browser
+    ) -> str:
+        pass
+
+    @classmethod
     def get_xml_feed(cls, limit: int = -1) -> str:
         feed = feedparser.parse(cls.url)
 
@@ -53,17 +61,27 @@ class Parser(ABC):
         while len(entries) < limit and read_entries < len(feed["entries"]):
             entry = feed["entries"][read_entries]
             read_entries += 1
-            try:
-                log.debug(f"PARSING: {entry['link']} - {entry['title']}")
-                entries.append(cls.parse_entry(entry, browser))
-            except SkipEntryException:
-                pass
-            except TimeoutError:
-                entries.append(cls._get_broken_item(entry["link"], entry["title"]))
-                log.error(f"SKIPPED: {entry['link']} - Timed out when parsing")
-            except Exception as e:
-                entries.append(cls._get_broken_item(entry["link"], entry["title"]))
-                log.error(f"SKIPPED: {entry['link']} - Unknown error")
+            tries = 0
+            while tries < 3:
+                try:
+                    log.debug(f"PARSING: {entry['link']} - {entry['title']}")
+                    entries.append(cls.parse_entry(entry, browser))
+                    break
+                except SkipEntryException:
+                    break
+                except TimeoutError as e:
+                    entries.append(
+                        cls._get_broken_item(entry["link"], entry["title"], str(e))
+                    )
+                    log.error(f"SKIPPED: {entry['link']} - Timed out when parsing")
+                except Exception as e:
+                    entries.append(
+                        cls._get_broken_item(entry["link"], entry["title"], str(e))
+                    )
+                    log.error(f"SKIPPED: {entry['link']} - Unknown error")
+                tries += 1
+                # wait a second, try to eliminate source availability errors
+                sleep(1)
 
         browser.quit()
 
@@ -79,11 +97,11 @@ class Parser(ABC):
         return feed.rss()
 
     @staticmethod
-    def _get_broken_item(url: str, title: str) -> Item:
+    def _get_broken_item(url: str, title: str, error: str) -> Item:
         return Item(
             title="BROKEN",
             link=url,
-            description=f"<h2>[BROKEN]{title}</h2><p>Something went wrong when parsing <a href='{url}'>{url}</a></p>",
+            description=f"<h2>[BROKEN]{title}</h2><p>Something went wrong when parsing <a href='{url}'>{url}</a></p><p>{error}</p>",
             guid=Guid(url),
         )
 
